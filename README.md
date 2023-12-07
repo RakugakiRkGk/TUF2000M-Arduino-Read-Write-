@@ -40,5 +40,6 @@ By: RakugakiRkGk
 
 ### Dev notes:
 - No he probado aun algun metodo para ingresar el registro con el numero que aparece en el manual
+- La función readUnsignedLong(), no funciona como se espera.
 - Aún no se prueba la funcion readLong()
-- Probando algunos registros, reinicie el totalizador (¿Como?, ¿Porque?)
+- Probando algunos registros reinicie el totalizador (¿Como?, ¿Porque?)
