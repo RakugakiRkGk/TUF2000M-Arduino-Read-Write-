@@ -27,7 +27,7 @@ Tipos de registros del caudalimetro:
 |   BCD   | Codigo decimal codificado en binario  |
 |   BIT   | Bit individual                        |
 
-Funciones agregadas (6/12/2023)
+Funciones agregadas (11/12/2023)
 
 |  Tipo    |            Funcion                                           | Notas
 |----------|--------------------------------------------------------------|--------------------
@@ -36,6 +36,8 @@ Funciones agregadas (6/12/2023)
 | uint32_t |  readUnsignedLong(uint16_t register_num, uint8_t data_size)  | probados: reg 103, 105
 | int16_t  |  readInt(uint16_t register_num)                              | probados: reg 158, 1437
 | void     |  writeReg(uint8_t register_num, uint16_t data)               | probados: reg 60 
+| void     |  printTime (uint32_t TotalSeconds)                           | formato hh:mm:ss
+| void     |  printFlowUnit (uint16_t flowUnit)                           | casos 0 - 31
 
 Dev notes:
 - Se elimino el swapBytes ya que en la mayoria de los registros causa problemas
@@ -70,6 +72,7 @@ Dev notes:
 //Cantidad de registros por tipo
 #define REAL_DATA_SIZE 2      //  Tamaño del registro REAL4
 #define LONG_DATA_SIZE 2      //  Tamaño del registro LONG
+// #define INT_DATA_SIZE 1       //  Tamaño del registro INTEGER ---> UNUSED <---
 
 HardwareSerial swSerial (PA3,PA2);  //  swSerial (RX_pin, TX_pin); stm32f103 ==> rx -> PA3 ; tx -> PA2
 ModbusMaster sensor;                //  Inicializa el objeto de MODBUS
