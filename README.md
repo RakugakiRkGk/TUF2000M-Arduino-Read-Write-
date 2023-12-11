@@ -37,6 +37,8 @@ By: RakugakiRkGk
 | uint32_t |  readUnsignedLong(uint16_t register_num, uint8_t data_size)  | probados: reg 103, 105
 | int16_t  |  readInt(uint16_t register_num)                              | probados: reg 158, 1437
 | void     |  writeReg(uint8_t register_num, uint16_t data)               | probados: reg 60 
+| void     |  printTime (uint32_t TotalSeconds)                           | formato hh:mm:ss
+| void     |  printFlowUnit (uint16_t flowUnit)                           | casos 0 - 31
 
 ### Dev notes:
 - Se elimino el swapBytes ya que en la mayoria de los registros causa problemas
