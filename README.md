@@ -6,7 +6,7 @@ By: RakugakiRkGk
 
 ## INFORMACION IMPORTANTE.
 - Este pograma se desarrolla de la base de "Nick Touran's MODBUS-reading ESP8266 code for the TUF-2000M Ultrasonic flow meter"
-- Se utilizan las librerias <HardwareSerial> y <ModbusMaster>
+- Se utilizan las librerias `HardwareSerial` y `ModbusMaster`
 - Se utiliza el convertidor RS485 a TTL automático (4 pínes TTL -- 3 Pines RS485)
 
 ## Informacion del sensor:
@@ -28,18 +28,17 @@ By: RakugakiRkGk
 |   **BCD**   | Codigo decimal codificado en binario  |
 |   **BIT**   | Bit individual                        |
 
-## Funciones agregadas (6/12/2023)
+## Funciones agregadas (11/12/2023)
 
-| **Tipo** |            **Funcion**                                         | **Notas**
-|----------|----------------------------------------------------------------|--------------------
-| float    |  `readFloat(uint8_t register_num, uint8_t data_size)`          | Se ingresa el registro como se ve en el manual (probados registros 1 - 33 - 113)
-| int32_t  |  `readLong(uint16_t register_num, uint8_t data_size)`          | --->  NO TESTEADO  <---
-| uint32_t |  `readUnsignedLong(uint16_t register_num, uint8_t data_size)`  | --->  PRUEBAS INCONCLUSAS  <--- 
-| int16_t  |  `readInt(uint16_t register_num)`                              | Se ingresa el registro menos 1 (probados: reg 158, 1437 en manual  -->   157, 1436 en el codigo)
-| void     |  `writeReg(uint8_t register_num, uint16_t data)`               | Se ingresa el registro menos 1 (probados: reg 60 en manual   -->   59 en el codigo)
+|  Tipo    |            Funcion                                           | Notas
+|----------|--------------------------------------------------------------|--------------------
+| float    |  readFloat(uint8_t register_num, uint8_t data_size)          | probados: reg 1 - 33 - 113
+| int32_t  |  readLong(uint16_t register_num, uint8_t data_size)          | probados: reg 9 
+| uint32_t |  readUnsignedLong(uint16_t register_num, uint8_t data_size)  | probados: reg 103, 105
+| int16_t  |  readInt(uint16_t register_num)                              | probados: reg 158, 1437
+| void     |  writeReg(uint8_t register_num, uint16_t data)               | probados: reg 60 
 
 ### Dev notes:
+- Se elimino el swapBytes ya que en la mayoria de los registros causa problemas
 - No he probado aun algun metodo para ingresar el registro con el numero que aparece en el manual
-- La función readUnsignedLong(), no funciona como se espera.
-- Aún no se prueba la funcion readLong()
-- Probando algunos registros reinicie el totalizador (¿Como?, ¿Porque?)
+- Probando algunos registros, reinicie el totalizador (¿Como?, ¿Porque?)
