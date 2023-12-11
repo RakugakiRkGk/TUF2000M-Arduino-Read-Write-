@@ -31,32 +31,32 @@ Funciones agregadas (6/12/2023)
 
 |  Tipo    |            Funcion                                           | Notas
 |----------|--------------------------------------------------------------|--------------------
-| float    |  readFloat(uint8_t register_num, uint8_t data_size)          | Se ingresa el registro como se ve en el manual (probados registros 1 - 33 - 113)
-| int32_t  |  readLong(uint16_t register_num, uint8_t data_size)          | --->  NO TESTEADO  <---
-| uint32_t |  readUnsignedLong(uint16_t register_num, uint8_t data_size)  | --->  PRUEBAS INCONCLUSAS  <--- 
-| int16_t  |  readInt(uint16_t register_num)                              | Se ingresa el registro menos 1 (probados: reg 158, 1437 en manual  -->   157, 1436 en el codigo)
-| void     |  writeReg(uint8_t register_num, uint16_t data)               | Se ingresa el registro menos 1 (probados: reg 60 en manual   -->   59 en el codigo)
+| float    |  readFloat(uint8_t register_num, uint8_t data_size)          | probados: reg 1 - 33 - 113
+| int32_t  |  readLong(uint16_t register_num, uint8_t data_size)          | probados: reg 9 
+| uint32_t |  readUnsignedLong(uint16_t register_num, uint8_t data_size)  | probados: reg 103, 105
+| int16_t  |  readInt(uint16_t register_num)                              | probados: reg 158, 1437
+| void     |  writeReg(uint8_t register_num, uint16_t data)               | probados: reg 60 
 
 Dev notes:
+- Se elimino el swapBytes ya que en la mayoria de los registros causa problemas
 - No he probado aun algun metodo para ingresar el registro con el numero que aparece en el manual
-- Aún no se prueba la funcion readLong()
 - Probando algunos registros, reinicie el totalizador (¿Como?, ¿Porque?)
 */
 
 #include <HardwareSerial.h>
 #include <ModbusMaster.h>
 
-//Registros obtenidos de (TUF-2000M Ultrasonic Flow Meter User Manual.pdf, seccion 7.1.1 MODBUS REGISTERS TABLE)
+//  Registros obtenidos de (TUF-2000M Ultrasonic Flow Meter User Manual.pdf, seccion 7.1.1 MODBUS REGISTERS TABLE)
 
 #define SLAVE_ID 1            //  ID de esclavo
 
 //Registros tipo REAL4
-#define FLOW_REGISTER 1       //  Registro de lectura del flujo
-#define TEMPERATURE_IN_1 33   //  Registro de lectura de temperatura
-#define POS_ACCUMULATOR 115   //  Registro de lestura del acumulador positivo
+#define FLOW_REGISTER 0       //  Registro de lectura del flujo
+#define TEMPERATURE_IN_1 32   //  Registro de lectura de temperatura
+#define POS_ACCUMULATOR 114   //  Registro de lestura del acumulador positivo
 
 //Registros tipo LONG
-#define WORKING_TIMER 103     //  Registro de lectura del tiempo de trabajo (en segundos)
+#define WORKING_TIMER 102     //  Registro de lectura del tiempo de trabajo (en segundos sin signo)
 #define POS_ACC_LONG 8        //  Registro de lectura del acumulador positivo tipo LONG
 
 //Registros de configuracion
@@ -71,23 +71,23 @@ Dev notes:
 #define REAL_DATA_SIZE 2      //  Tamaño del registro REAL4
 #define LONG_DATA_SIZE 2      //  Tamaño del registro LONG
 
-HardwareSerial swSerial (PA3,PA2);  //swSerial (RX_pin, TX_pin); stm32f103 ==> rx -> PA3 ; tx -> PA2
-ModbusMaster sensor;                //Inicializa el objeto de MODBUS
+HardwareSerial swSerial (PA3,PA2);  //  swSerial (RX_pin, TX_pin); stm32f103 ==> rx -> PA3 ; tx -> PA2
+ModbusMaster sensor;                //  Inicializa el objeto de MODBUS
 
 void setup()
 {
-  Serial.begin(115200);             //Serial de comunicacion con el MCU stm32f103xxxx
+  Serial.begin(115200);             //  Serial de comunicacion con el MCU stm32f103xxxx
   Serial.println("Welcome");
-  swSerial.begin(9600);             //Serial de comunicacón con el sensor
+  swSerial.begin(9600);             //  Serial de comunicacón con el sensor
   delay(2000);
-  sensor.begin(SLAVE_ID, swSerial); //Comunicación con el esclavo MODBUS, mediante el serial swSerial
+  sensor.begin(SLAVE_ID, swSerial); //  Comunicación con el esclavo MODBUS, mediante el serial swSerial
 }
 
 void loop() 
 {
   Serial.print("Flujo: ");
   Serial.println(readFloat(FLOW_REGISTER, REAL_DATA_SIZE), 4);
-  delay(10);                                                        //Es importante agregar delay(); si los registros no se están leyendo de forma correcta
+  delay(10);                                                        //  Es importante agregar delay(); si los registros no se están leyendo de forma correcta
   Serial.print("Acumulador: ");
   Serial.println(readFloat(POS_ACCUMULATOR, REAL_DATA_SIZE));
   delay(10);
@@ -95,13 +95,13 @@ void loop()
   Serial.println(readFloat(TEMPERATURE_IN_1, REAL_DATA_SIZE));
   delay(10);
   Serial.print("Tiempo de trabajo ");
-  Serial.println(readUnsignedLong(WORKING_TIMER, LONG_DATA_SIZE));  //El registro 103 funciona, pero se satura en 2^(16) y se reinicia. Tiempo de trabajo total (menu +1) 
+  printTime(readUnsignedLong(WORKING_TIMER, LONG_DATA_SIZE));       //  Lectura del tiempo correcta, solucionado quitando byte swap. Tiempo de trabajo total (menu +1) 
+  delay(10);                                                        //  Se agrega la funcion de imprimir tiempo en formato hh:mm:ss
+  Serial.print("Pos accumulator long ");
+  Serial.println(readLong(POS_ACC_LONG, LONG_DATA_SIZE));
   delay(10);
-  // Serial.print("Pos accumulator long ");
-  // Serial.println(readLong(POS_ACC_LONG, LONG_DATA_SIZE));
-  // delay(10);
   Serial.print("Flow Unit ");
-  Serial.println(readInt(FLOW_UNIT));
+  printFlowUnit(readInt(FLOW_UNIT));                                //  Se agrega la funcion de imprimir la unidad de medida del flujo
   delay(10);
   Serial.print("Current display window: ");
   Serial.println(readInt(CURRENT_WINDOW),HEX);                      //  La ventana actual se muestra en Hexadecimal,  
@@ -138,10 +138,7 @@ float readFloat(uint16_t register_num, uint16_t data_size) {
       Serial.print(buf[j]);
       Serial.print(" ");
     }
-    // swap bytes because the data comes in Big Endian!
-    temp = buf[1];
-    buf[1]=buf[0];
-    buf[0]=temp;
+
     // hand-assemble a single-precision float from the bytestream
     memcpy(&value, &buf, sizeof(float));
     Serial.println();
@@ -178,11 +175,6 @@ int32_t readLong(uint16_t register_num, uint16_t data_size) {
       Serial.print(" ");
     }
 
-    // swap bytes because the data comes in Big Endian!
-    int16_t temp = buf[1];
-    buf[1] = buf[0];
-    buf[0] = temp;
-
     // Combine the two 16-bit values into a 32-bit int
     value = ((int32_t)buf[1] << 16) | buf[0];
     
@@ -215,14 +207,8 @@ uint32_t readUnsignedLong(uint16_t register_num, uint16_t data_size) {
       Serial.print(" ");
     }
 
-    // swap bytes because the data comes in Big Endian!
-    uint16_t temp = buf[1];
-    buf[1] = buf[0];
-    buf[0] = temp;
-
     // Combine the two 16-bit values into a 32-bit unsigned int
     value = ((uint32_t)buf[1] << 16) | buf[0];
-    
     Serial.println();
   }
   else {
@@ -278,5 +264,61 @@ void writeReg(uint16_t register_num, uint16_t data){
   else{
     Serial.print("Write Failure. Code: ");
     Serial.println(result, HEX);
+  }
+}
+
+void printTime (uint32_t TotalSeconds){
+  uint16_t hours = TotalSeconds / 3600;
+  uint16_t minutes = (TotalSeconds % 3600) / 60;
+  uint16_t seconds = TotalSeconds % 60;
+
+  Serial.print(hours);
+  Serial.print(":");
+  if (minutes < 10) {
+    Serial.print("0");  // Agrega un cero si los minutos son menores a 10
+  }
+  Serial.print(minutes);
+  Serial.print(":");
+  if (seconds < 10) {
+  Serial.print("0");  // Agrega un cero si los segundos son menores a 10
+  }
+  Serial.println(seconds);
+}
+
+void printFlowUnit (uint16_t flowUnit){
+  switch(flowUnit){
+    case 0: Serial.println("m3/s"); break;
+    case 1: Serial.println("m3/m"); break;
+    case 2: Serial.println("m3/h"); break;
+    case 3: Serial.println("m3/d"); break;
+    case 4: Serial.println("l/s"); break;
+    case 5: Serial.println("l/m"); break;
+    case 6: Serial.println("l/h"); break;
+    case 7: Serial.println("l/d"); break;
+    case 8: Serial.println("Gal/s"); break;
+    case 9: Serial.println("Gal/m"); break;
+    case 10: Serial.println("Gal/h"); break;
+    case 11: Serial.println("Gal/d"); break;
+    case 12: Serial.println("IGL/s"); break;
+    case 13: Serial.println("IGL/m"); break;
+    case 14: Serial.println("IGL/h"); break;
+    case 15: Serial.println("IGL/d"); break;
+    case 16: Serial.println("Mg/s"); break;
+    case 17: Serial.println("Mg/m"); break;
+    case 18: Serial.println("Mg/h"); break;
+    case 19: Serial.println("Mg/d"); break;
+    case 20: Serial.println("cf/s"); break;
+    case 21: Serial.println("cf/m"); break;
+    case 22: Serial.println("cf/h"); break;
+    case 23: Serial.println("cf/d"); break;
+    case 24: Serial.println("OB/s"); break;
+    case 25: Serial.println("OB/m"); break;
+    case 26: Serial.println("OB/h"); break;
+    case 27: Serial.println("OB/d"); break;
+    case 28: Serial.println("IB/s"); break;
+    case 29: Serial.println("IB/m"); break;
+    case 30: Serial.println("IB/h"); break;
+    case 31: Serial.println("IB/d"); break;
+    default: Serial.println("Unidad no reconocida"); break;
   }
 }
