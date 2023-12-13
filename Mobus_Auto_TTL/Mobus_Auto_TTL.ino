@@ -27,22 +27,27 @@ Tipos de registros del caudalimetro:
 |   BCD   | Codigo decimal codificado en binario  |
 |   BIT   | Bit individual                        |
 
-Funciones agregadas (11/12/2023)
+Funciones agregadas (12/12/2023)
 
 |  Tipo    |            Funcion                                           | Notas
 |----------|--------------------------------------------------------------|--------------------
-| float    |  readFloat(uint8_t register_num, uint8_t data_size)          | probados: reg 1 - 33 - 113
+|  float   |  readFloat(uint8_t register_num, uint8_t data_size)          | probados: reg 1 - 33 - 113
 | int32_t  |  readLong(uint16_t register_num, uint8_t data_size)          | probados: reg 9 
 | uint32_t |  readUnsignedLong(uint16_t register_num, uint8_t data_size)  | probados: reg 103, 105
 | int16_t  |  readInt(uint16_t register_num)                              | probados: reg 158, 1437
-| void     |  writeReg(uint8_t register_num, uint16_t data)               | probados: reg 60 
-| void     |  printTime (uint32_t TotalSeconds)                           | formato hh:mm:ss
-| void     |  printFlowUnit (uint16_t flowUnit)                           | casos 0 - 31
+|   void   |  writeReg(uint8_t register_num, uint16_t data)               | probados: reg 60, 59
+| uint16_t |  readBit (uint16_t error_code)                               | probados: reg 72 ---> PRUEBAS INCONCLUSAS <---
+|   void   |  printTime (uint32_t TotalSeconds)                           | formato hh:mm:ss
+|   void   |  printFlowUnit (uint16_t flowUnit)                           | casos 0 - 31
+|   void   |  printErrorCode (uint16_t error_code)                        | casos 0 - 15
+|   void   |  GoToMenu(uint16_t menu)                                     | menu ingresado en decimal
+|   void   |  InputKey(uint16_t key)                                      | Tabla 7.4 del manual
 
 Dev notes:
 - Se elimino el swapBytes ya que en la mayoria de los registros causa problemas
-- No he probado aun algun metodo para ingresar el registro con el numero que aparece en el manual
-- Probando algunos registros, reinicie el totalizador (¿Como?, ¿Porque?)
+- Probando algunos registros, reinicie el totalizador (¿Como?, ¿Porque?) (posible respuesta en las nuevas funciones de configuracion)
+- La lectura de bits, funciona, pero no estoy seguro que sea la correcta, mas pruebas para corroborar
+- Se integra una configuracion inicial usando las funciones GoToMenu() y InputKey()
 */
 
 #include <HardwareSerial.h>
@@ -61,6 +66,25 @@ void setup()
   swSerial.begin(9600);             //  Serial de comunicacón con el sensor
   delay(2000);
   sensor.begin(SLAVE_ID, swSerial); //  Comunicación con el esclavo MODBUS, mediante el serial swSerial
+
+  //  Configuracion inicial, diametro y grosor del tubo
+  GoToMenu(17);
+  InputKey(51);
+  InputKey(50);
+  InputKey(61);
+  GoToMenu(18);
+  InputKey(50);
+  InputKey(61);
+  GoToMenu(37);
+}
+
+void GoToMenu(uint16_t menu){
+  writeReg(MENU_REG,menu);
+  delay(10);
+}
+void InputKey(uint16_t key){
+  writeReg(KEY_TO_INPUT, key);
+  delay(10);
 }
 
 void loop() 
@@ -84,11 +108,11 @@ void loop()
   printFlowUnit(readInt(FLOW_UNIT));                                //  Se agrega la funcion de imprimir la unidad de medida del flujo
   delay(10);
   Serial.print("Current display window: ");
-  Serial.println(readInt(CURRENT_WINDOW),HEX);                      //  La ventana actual se muestra en Hexadecimal,  
+  Serial.println(readInt(CURRENT_WINDOW),HEX);                      //  El menu actual en el dispositivo se muestra en hexadecimal,  
   delay(10);  
-  // Serial.print("Go to Menu: ");
-  // writeReg(MENU_REG, MENU_NUM);
-  // delay(10);
+  Serial.print("Estado del dispositivo: ");
+  printErrorCode(readBit(ERROR_CODE));                              //   Revision y comprobacion de los errores
+  delay(10);
   Serial.println();
   delay(3000);
 }
@@ -108,8 +132,7 @@ float readFloat(uint16_t register_num, uint16_t data_size) {
   float value;
 
   result = sensor.readHoldingRegisters(register_num, data_size);
-  Serial.print (result);
-  //Comprobacion de lectura correcta
+
   if (result == sensor.ku8MBSuccess)
   {
     for (j = 0; j < data_size; j++)
@@ -209,17 +232,14 @@ INTEGER (Entero de 16 bits):
 
 int16_t readInt(uint16_t register_num){
   uint8_t result;
-  int16_t buf[1];
   int16_t value;
 
   result = sensor.readHoldingRegisters(register_num, 1);
-  Serial.print (result);
+
   if (result == sensor.ku8MBSuccess)
   {
-      buf[0] = sensor.getResponseBuffer(0);
-      Serial.print(buf[0]);
-      Serial.print(" ");
-      value = buf [0];
+      value = sensor.getResponseBuffer(0);
+      Serial.print(value);
       Serial.println();
   }
   else {
@@ -245,6 +265,24 @@ void writeReg(uint16_t register_num, uint16_t data){
     Serial.print("Write Failure. Code: ");
     Serial.println(result, HEX);
   }
+}
+
+uint16_t readBit (uint16_t error_code){
+  uint8_t result;
+  uint16_t value;
+  
+  result = sensor.readHoldingRegisters(error_code, 1);
+
+  if (result == sensor.ku8MBSuccess)
+  {
+    value = sensor.getResponseBuffer(0);
+    Serial.println(value);
+  }
+  else{
+    Serial.print("Failure. Code: ");
+    Serial.println(result, HEX);
+  }
+  return value;
 }
 
 void printTime (uint32_t TotalSeconds){
@@ -300,5 +338,27 @@ void printFlowUnit (uint16_t flowUnit){
     case 30: Serial.println("IB/h"); break;
     case 31: Serial.println("IB/d"); break;
     default: Serial.println("Unidad no reconocida"); break;
+  }
+}
+
+void printErrorCode (uint16_t error_code){
+  switch(error_code){
+    case 0: Serial.println("Bit0 no received signal"); break;
+    case 1: Serial.println("Bit1 low received signal"); break;
+    case 2: Serial.println("Bit2 poor received signal"); break;
+    case 3: Serial.println("Bit3 pipe empty"); break;
+    case 4: Serial.println("Bit4 hardware failure"); break;
+    case 5: Serial.println("Bit5 receiving circuits gain in adjusting"); break;
+    case 6: Serial.println("Bit6 frequency at the frequency output over flow"); break;
+    case 7: Serial.println("Bit7 current at 4-20mA over flow"); break;
+    case 8: Serial.println("Bit8 RAM check-sum error"); break;
+    case 9: Serial.println("Bit9 main clock or timer clock error"); break;
+    case 10: Serial.println("Bit10 parameters check-sum error"); break;
+    case 11: Serial.println("Bit11 ROM check-sum error"); break;
+    case 12: Serial.println("Bit12 temperature circuits error"); break;
+    case 13: Serial.println("Bit13 reserved "); break;
+    case 14: Serial.println("Bit14 internal timer over flow"); break;
+    case 15: Serial.println("Bit15 analog input over range"); break;
+    default: Serial.println("---> ERROR DESCONOCIDO <---"); break;
   }
 }

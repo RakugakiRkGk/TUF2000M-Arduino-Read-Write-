@@ -10,14 +10,17 @@
 #define POS_ACC_LONG 8        //  Registro de lectura del acumulador positivo tipo LONG
 
 //Registros de configuracion
-#define MENU_REG 59           //  Registro de configuracion Go To Windows # (Reg 60)
-#define MENU_NUM 50           //  Data a escribir en el registro 60 (50 en decimal --> menu 31 en hexadecimal)
+#define MENU_REG 59           //  Registro de configuracion Go To Windows# 
+#define KEY_TO_INPUT 58       //  Registro de configuracion para controlar el caudalimetro. Referirse a seccion 7.4 KEY VALUE TABLE del manual
 
 //Registros tipo INTEGER
-#define FLOW_UNIT 1436        //  Registro de lectura de la unidad de medida del flujo (registro 1437 -- referirse a nota 5 en el manual seccion 7.1.1)
+#define FLOW_UNIT 1436        //  Registro de lectura de la unidad de medida del flujo (registro 1437 -- referirse a nota 5 en el manual, seccion 7.1.1)
 #define CURRENT_WINDOW 157    //  Registro de lectura del menú actual mostrado en el caudalimetro (registro 158)
+
+#define ERROR_CODE 71         //  Registro de codigos de error. Referirse a nota 4 del manual, seccion 7.1.1
 
 //Cantidad de registros por tipo
 #define REAL_DATA_SIZE 2      //  Tamaño del registro REAL4
 #define LONG_DATA_SIZE 2      //  Tamaño del registro LONG
 // #define INT_DATA_SIZE 1       //  Tamaño del registro INTEGER ---> UNUSED <---
+// #define BIT_DATA_SIZE 1       //  Tamaño del registro BIT ---> UNUSED <---
