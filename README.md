@@ -28,19 +28,24 @@ By: RakugakiRkGk
 |   **BCD**   | Codigo decimal codificado en binario  |
 |   **BIT**   | Bit individual                        |
 
-## Funciones agregadas (11/12/2023)
+## Funciones agregadas (12/12/2023)
 
 |  Tipo    |            Funcion                                           | Notas
 |----------|--------------------------------------------------------------|--------------------
-| float    |  readFloat(uint8_t register_num, uint8_t data_size)          | probados: reg 1 - 33 - 113
+|  float   |  readFloat(uint8_t register_num, uint8_t data_size)          | probados: reg 1 - 33 - 113
 | int32_t  |  readLong(uint16_t register_num, uint8_t data_size)          | probados: reg 9 
 | uint32_t |  readUnsignedLong(uint16_t register_num, uint8_t data_size)  | probados: reg 103, 105
 | int16_t  |  readInt(uint16_t register_num)                              | probados: reg 158, 1437
-| void     |  writeReg(uint8_t register_num, uint16_t data)               | probados: reg 60 
-| void     |  printTime (uint32_t TotalSeconds)                           | formato hh:mm:ss
-| void     |  printFlowUnit (uint16_t flowUnit)                           | casos 0 - 31
+|   void   |  writeReg(uint8_t register_num, uint16_t data)               | probados: reg 60, 59
+| uint16_t |  readBit (uint16_t error_code)                               | probados: reg 72 ---> PRUEBAS INCONCLUSAS <---
+|   void   |  printTime (uint32_t TotalSeconds)                           | formato hh:mm:ss
+|   void   |  printFlowUnit (uint16_t flowUnit)                           | casos 0 - 31
+|   void   |  printErrorCode (uint16_t error_code)                        | casos 0 - 15
+|   void   |  GoToMenu(uint16_t menu)                                     | menu ingresado en decimal
+|   void   |  InputKey(uint16_t key)                                      | Tabla 7.4 del manual
 
 ### Dev notes:
 - Se elimino el swapBytes ya que en la mayoria de los registros causa problemas
-- No he probado aun algun metodo para ingresar el registro con el numero que aparece en el manual
-- Probando algunos registros, reinicie el totalizador (¿Como?, ¿Porque?)
+- Probando algunos registros, reinicie el totalizador (¿Como?, ¿Porque?) (posible respuesta en las nuevas funciones de configuracion)
+- La lectura de bits, funciona, pero no estoy seguro que sea la correcta, mas pruebas para corroborar
+- Se integra una configuracion inicial usando las funciones GoToMenu() y InputKey()
