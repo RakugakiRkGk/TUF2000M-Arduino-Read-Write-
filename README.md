@@ -46,6 +46,5 @@ By: RakugakiRkGk
 
 ### Dev notes:
 - Se elimino el swapBytes ya que en la mayoria de los registros causa problemas
-- Probando algunos registros, reinicie el totalizador (¿Como?, ¿Porque?) (posible respuesta en las nuevas funciones de configuracion)
 - La lectura de bits, funciona, pero no estoy seguro que sea la correcta, mas pruebas para corroborar
 - Se integra una configuracion inicial usando las funciones GoToMenu() y InputKey()
